@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot</title>
+    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+
+<body>
+    <!-- Loader -->
+    <div id="loader" style="display: block;">
+        <p>Loading...</p>
+    </div>
+
+    <!-- App -->
+    <div id="app" style="display: none;">
+        <div id="title">llama-gg-v1</div>
+        <div id="chat-box"></div>
+        <div id="input-box">
+            <input id="user-input" type="text" style="width: 80%;">
+            <button onclick="sendMessage()"><i class="fas fa-arrow-up"></i></button>
+        </div>
+    </div>
+
+    <script>
+
+        function checkInitialization() {
+            fetch('/is_initialized')
+            .then(response => response.json())
+            .then(data => {
+                if (data.initialized) {
+                    // Hide loader and show app with a fade-in animation
+                    document.getElementById('loader').style.display = 'none';
+                    var app = document.getElementById('app');
+                    app.style.display = 'block';
+                    fadeIn(app, 1000);
+                } else {
+                    // Keep checking
+                    setTimeout(checkInitialization, 1000);
+                }
+            });
+        }
+
+        async function sendMessage() {
+            const userInput = document.getElementById("user-input").value;
+            const chatBox = document.getElementById("chat-box");
+
+            // Add user input to chat box
+            chatBox.innerHTML += `<div class="user">User: ${userInput}</div>`;
+
+            // Add a temporary loading message
+            const loadingMessageElement = document.createElement('div');
+            loadingMessageElement.className = 'chatbot';
+            loadingMessageElement.innerHTML = 'Chatbot: Thinking...';
+            chatBox.appendChild(loadingMessageElement);
+
+            // Fetch the response from the server
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_input: userInput })
+            });
+            const data = await response.json();
+
+            // Replace the temporary loading message with the actual response
+            loadingMessageElement.innerHTML = `Chatbot: ${data.response}`;
+
+            // Clear the input
+            document.getElementById("user-input").value = '';
+        }
+
+        // Start checking
+        checkInitialization();
+    </script>
+</body>
+
+</html>
